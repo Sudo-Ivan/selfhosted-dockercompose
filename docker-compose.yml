@@ -1,0 +1,76 @@
+version: "3"
+services:
+  jellyfin:
+    image: lscr.io/linuxserver/jellyfin
+    container_name: jellyfin
+    ports:
+      - 80:8096
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=America/New_York
+    volumes:
+      - /jellyfin/config:/config
+      - /jellyfin/tv/shows:/data/tvshows
+      - /jellyfin/movies:/data/movies
+      - /jellyfin/music:/data/music
+    devices:
+      - /path/to/render/devices:/path/to/render/devices
+    restart: always
+    networks:
+      - jellyfin
+
+  kavita:
+    image: kizaing/kavita:latest
+    container_name: kavita
+    volumes:
+      - /kavita/manga:/manga
+      - /kavita/comics:/comics
+      - /kavita/books:/books
+      - /kavita/data:/kavita/config
+    environment:
+      - TZ=America/New_York
+    ports:
+      - "5000:5000"
+    restart: unless-stopped
+
+  wizarr:
+    container_name: wizarr
+    image: ghcr.io/wizarrrr/wizarr
+    ports:
+      - 5690:5690
+    volumes:
+      - /wizarr/data:/data/database
+    environment:
+      - APP_URL=https://join.yourdomain.com
+      - DISABLE_BUILTIN_AUTH=false
+      - ALLOW_BUG_REPORTING=true
+
+  watchtower:
+    image: containrrr/watchtower
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: wizarr --interval 30
+
+  mealie:
+    container_name: mealie
+    image: hkotel/mealie:latest
+    restart: always
+    ports:
+      - 9925:80
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=America/Anchorage
+      - RECIPE_PUBLIC=true
+      - RECIPE_SHOW_NUTRITION=true
+      - RECIPE_SHOW_ASSETS=true
+      - RECIPE_LANDSCAPE_VIEW=true
+      - RECIPE_DISABLE_COMMENTS=false
+      - RECIPE_DISABLE_AMOUNT=false
+    volumes:
+      - /mealie/data/:/app/data
+
+networks:
+  jellyfin:
+    external: true
